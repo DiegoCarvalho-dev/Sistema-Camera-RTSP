@@ -1,15 +1,12 @@
-package com.seunome.smartcounting
+package com.exemplo.sistemacontageminteligente
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
-import org.videolan.libvlc.LibVLC
-import org.videolan.libvlc.Media
-import org.videolan.libvlc.MediaPlayer
 import org.videolan.libvlc.util.VLCVideoLayout
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), CameraManager.CameraStatusListener {
 
     private lateinit var camera1Layout: VLCVideoLayout
     private lateinit var camera2Layout: VLCVideoLayout
@@ -17,9 +14,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusCamera1: TextView
     private lateinit var statusCamera2: TextView
 
-    private var libVLC: LibVLC? = null
-    private var mediaPlayer1: MediaPlayer? = null
-    private var mediaPlayer2: MediaPlayer? = null
+    private lateinit var cameraManager: CameraManager
 
     private val camera1Url = "rtsp://admin:1q2w3e%21QW%40E@192.168.1.108:554/cam/realmonitor?channel=1&subtype=1"
     private val camera2Url = "rtsp://admin:1q2w3e%21QW%40E@192.168.1.109:554/cam/realmonitor?channel=1&subtype=1"
@@ -29,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         connectViews()
-        setupVLC()
+        setupCameraManager()
         connectCameras()
     }
 
@@ -45,104 +40,32 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupVLC() {
-        try {
-            val options = ArrayList<String>()
-            options.add("--network-caching=300")
-            options.add("--rtsp-tcp")
-
-            libVLC = LibVLC(this, options)
-        } catch (e: Exception) {
-            showError("Erro ao configurar player de vídeo")
-        }
+    private fun setupCameraManager() {
+        cameraManager = CameraManager(this)
+        cameraManager.setStatusListener(this)
+        cameraManager.initializeVLC()
     }
 
     private fun connectCameras() {
-        connectCamera1()
-        connectCamera2()
+        cameraManager.connectCamera(1, camera1Url, camera1Layout)
+        cameraManager.connectCamera(2, camera2Url, camera2Layout)
     }
 
-    private fun connectCamera1() {
-        try {
-            mediaPlayer1 = MediaPlayer(libVLC).apply {
-                attachViews(camera1Layout, null, false, false)
-
-                setEventListener { event ->
-                    when (event.type) {
-                        MediaPlayer.Event.Opening -> {
-                            runOnUiThread { statusCamera1.text = "Conectando..." }
-                        }
-                        MediaPlayer.Event.Playing -> {
-                            runOnUiThread { statusCamera1.text = "Conectado" }
-                        }
-                        MediaPlayer.Event.Stopped -> {
-                            runOnUiThread { statusCamera1.text = "Desconectado" }
-                        }
-                        MediaPlayer.Event.Error -> {
-                            runOnUiThread { statusCamera1.text = "Erro" }
-                        }
-                    }
-                }
-
-                val media = Media(libVLC, camera1Url)
-                setMedia(media)
-                play()
+    override fun onCameraStatusChanged(cameraId: Int, status: String) {
+        runOnUiThread {
+            when (cameraId) {
+                1 -> statusCamera1.text = status
+                2 -> statusCamera2.text = status
             }
-        } catch (e: Exception) {
-            runOnUiThread { statusCamera1.text = "Erro" }
-        }
-    }
-
-    private fun connectCamera2() {
-        try {
-            mediaPlayer2 = MediaPlayer(libVLC).apply {
-                attachViews(camera2Layout, null, false, false)
-
-                setEventListener { event ->
-                    when (event.type) {
-                        MediaPlayer.Event.Opening -> {
-                            runOnUiThread { statusCamera2.text = "Conectando..." }
-                        }
-                        MediaPlayer.Event.Playing -> {
-                            runOnUiThread { statusCamera2.text = "Conectado" }
-                        }
-                        MediaPlayer.Event.Stopped -> {
-                            runOnUiThread { statusCamera2.text = "Desconectado" }
-                        }
-                        MediaPlayer.Event.Error -> {
-                            runOnUiThread { statusCamera2.text = "Erro" }
-                        }
-                    }
-                }
-
-                val media = Media(libVLC, camera2Url)
-                setMedia(media)
-                play()
-            }
-        } catch (e: Exception) {
-            runOnUiThread { statusCamera2.text = "Erro" }
         }
     }
 
     private fun reconnectCameras() {
-        mediaPlayer1?.stop()
-        mediaPlayer2?.stop()
-
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            connectCameras()
-        }, 1000)
-    }
-
-    private fun showError(message: String) {
-        android.util.Log.e("RTSP_APP", message)
+        cameraManager.reconnectAllCameras(camera1Url, camera1Layout, camera2Url, camera2Layout)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        mediaPlayer1?.detachViews()
-        mediaPlayer2?.detachViews()
-        mediaPlayer1?.release()
-        mediaPlayer2?.release()
-        libVLC?.release()
+        cameraManager.release()
     }
 }
