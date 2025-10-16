@@ -12,9 +12,11 @@ class CameraManager(private val context: Context) {
     private var libVLC: LibVLC? = null
     private var mediaPlayer1: MediaPlayer? = null
     private var mediaPlayer2: MediaPlayer? = null
+    private val urlValidator = RTSPUrlValidator()
 
     interface CameraStatusListener {
         fun onCameraStatusChanged(cameraId: Int, status: String)
+        fun onCameraError(cameraId: Int, errorMessage: String)
     }
 
     private var statusListener: CameraStatusListener? = null
@@ -29,14 +31,28 @@ class CameraManager(private val context: Context) {
             options.add("--network-caching=300")
             options.add("--rtsp-tcp")
             options.add("--avcodec-hw=any")
+            options.add("--verbose=2")
 
             libVLC = LibVLC(context, options)
         } catch (e: Exception) {
             Log.e("CameraManager", "Erro ao inicializar VLC: ${e.message}")
+            statusListener?.onCameraError(0, "Falha ao inicializar player de vídeo")
         }
     }
 
     fun connectCamera(cameraId: Int, cameraUrl: String, videoLayout: VLCVideoLayout) {
+        val validation = urlValidator.validateUrl(cameraUrl)
+
+        if (!validation.isValid) {
+            statusListener?.onCameraError(cameraId, "URL inválida: ${validation.message}")
+            return
+        }
+
+        val cameraInfo = urlValidator.extractCameraInfo(cameraUrl)
+        val formattedUrl = urlValidator.formatUrlWithTimeout(cameraUrl, 15000)
+
+        Log.d("CameraManager", "Conectando câmera $cameraId: ${cameraInfo.host}")
+
         try {
             val mediaPlayer = MediaPlayer(libVLC).apply {
                 attachViews(videoLayout, null, false, false)
@@ -48,17 +64,22 @@ class CameraManager(private val context: Context) {
                         }
                         MediaPlayer.Event.Playing -> {
                             statusListener?.onCameraStatusChanged(cameraId, "Conectado")
+                            Log.i("CameraManager", "Câmera $cameraId conectada com sucesso")
                         }
                         MediaPlayer.Event.Stopped -> {
                             statusListener?.onCameraStatusChanged(cameraId, "Desconectado")
                         }
                         MediaPlayer.Event.Error -> {
-                            statusListener?.onCameraStatusChanged(cameraId, "Erro")
+                            statusListener?.onCameraStatusChanged(cameraId, "Erro de conexão")
+                            statusListener?.onCameraError(cameraId, "Falha na conexão com a câmera")
+                        }
+                        MediaPlayer.Event.Buffering -> {
+                            statusListener?.onCameraStatusChanged(cameraId, "Buffering...")
                         }
                     }
                 }
 
-                val media = Media(libVLC, cameraUrl)
+                val media = Media(libVLC, formattedUrl)
                 setMedia(media)
                 play()
             }
@@ -69,8 +90,16 @@ class CameraManager(private val context: Context) {
             }
 
         } catch (e: Exception) {
-            statusListener?.onCameraStatusChanged(cameraId, "Erro")
+            statusListener?.onCameraError(cameraId, "Erro interno: ${e.message}")
             Log.e("CameraManager", "Erro ao conectar câmera $cameraId: ${e.message}")
+        }
+    }
+
+    fun getCameraConnectionInfo(cameraId: Int): String {
+        return when (cameraId) {
+            1 -> urlValidator.extractCameraInfo(camera1Url).toString()
+            2 -> urlValidator.extractCameraInfo(camera2Url).toString()
+            else -> "Câmera não encontrada"
         }
     }
 
@@ -93,5 +122,10 @@ class CameraManager(private val context: Context) {
         mediaPlayer1 = null
         mediaPlayer2 = null
         libVLC = null
+    }
+
+    companion object {
+        private const val camera1Url = "rtsp://admin:1q2w3e%21QW%40E@192.168.1.108:554/cam/realmonitor?channel=1&subtype=1"
+        private const val camera2Url = "rtsp://admin:1q2w3e%21QW%40E@192.168.1.109:554/cam/realmonitor?channel=1&subtype=1"
     }
 }
