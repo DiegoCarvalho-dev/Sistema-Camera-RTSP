@@ -6,7 +6,7 @@ import android.widget.Button
 import android.widget.TextView
 import org.videolan.libvlc.util.VLCVideoLayout
 
-class MainActivity : AppCompatActivity(), CameraManager.CameraStatusListener {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var camera1Layout: VLCVideoLayout
     private lateinit var camera2Layout: VLCVideoLayout
@@ -16,19 +16,16 @@ class MainActivity : AppCompatActivity(), CameraManager.CameraStatusListener {
 
     private lateinit var cameraManager: CameraManager
 
-    private val camera1Url = "rtsp://admin:1q2w3e%21QW%40E@192.168.1.108:554/cam/realmonitor?channel=1&subtype=1"
-    private val camera2Url = "rtsp://admin:1q2w3e%21QW%40E@192.168.1.109:554/cam/realmonitor?channel=1&subtype=1"
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        connectViews()
+        setupViews()
         setupCameraManager()
         connectCameras()
     }
 
-    private fun connectViews() {
+    private fun setupViews() {
         camera1Layout = findViewById(R.id.camera1Layout)
         camera2Layout = findViewById(R.id.camera2Layout)
         btnReconnect = findViewById(R.id.btnReconnect)
@@ -42,26 +39,36 @@ class MainActivity : AppCompatActivity(), CameraManager.CameraStatusListener {
 
     private fun setupCameraManager() {
         cameraManager = CameraManager(this)
-        cameraManager.setStatusListener(this)
+        cameraManager.setStatusListener(object : CameraManager.CameraStatusListener {
+            override fun onCameraStatusChanged(cameraId: Int, status: String) {
+                runOnUiThread {
+                    if (cameraId == 1) statusCamera1.text = status
+                    if (cameraId == 2) statusCamera2.text = status
+                }
+            }
+
+            override fun onCameraError(cameraId: Int, errorMessage: String) {
+                runOnUiThread {
+                    if (cameraId == 1) statusCamera1.text = "Erro"
+                    if (cameraId == 2) statusCamera2.text = "Erro"
+                }
+            }
+        })
         cameraManager.initializeVLC()
     }
 
     private fun connectCameras() {
-        cameraManager.connectCamera(1, camera1Url, camera1Layout)
-        cameraManager.connectCamera(2, camera2Url, camera2Layout)
-    }
-
-    override fun onCameraStatusChanged(cameraId: Int, status: String) {
-        runOnUiThread {
-            when (cameraId) {
-                1 -> statusCamera1.text = status
-                2 -> statusCamera2.text = status
-            }
-        }
+        cameraManager.connectCamera(1, CameraConfig.CAMERA_1_URL, camera1Layout)
+        cameraManager.connectCamera(2, CameraConfig.CAMERA_2_URL, camera2Layout)
     }
 
     private fun reconnectCameras() {
-        cameraManager.reconnectAllCameras(camera1Url, camera1Layout, camera2Url, camera2Layout)
+        cameraManager.reconnectAllCameras(
+            CameraConfig.CAMERA_1_URL,
+            camera1Layout,
+            CameraConfig.CAMERA_2_URL,
+            camera2Layout
+        )
     }
 
     override fun onDestroy() {
