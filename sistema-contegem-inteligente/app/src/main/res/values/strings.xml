@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Sistema Contagem Inteligente</string>
+    <string name="camera_1">Câmera 1</string>
+    <string name="camera_2">Câmera 2</string>
+    <string name="reconnect">Reconectar</string>
+    <string name="connecting">Conectando…</string>
+</resources>

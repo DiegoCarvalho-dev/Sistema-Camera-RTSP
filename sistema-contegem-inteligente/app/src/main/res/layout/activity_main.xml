@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/color_background"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Sistema de Câmeras RTSP"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:textColor="@color/color_primary"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Câmera 1 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/camera_1"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"/>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:background="#E0E0E0"
+        android:layout_marginBottom="16dp">
+
+        <org.videolan.libvlc.util.VLCVideoLayout
+            android:id="@+id/camera1Layout"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/statusCamera1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/connecting"
+            android:background="@color/color_primary"
+            android:textColor="@android:color/white"
+            android:padding="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_margin="8dp"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Câmera 2 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/camera_2"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"/>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:background="#E0E0E0"
+        android:layout_marginBottom="16dp">
+
+        <org.videolan.libvlc.util.VLCVideoLayout
+            android:id="@+id/camera2Layout"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/statusCamera2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/connecting"
+            android:background="@color/color_primary"
+            android:textColor="@android:color/white"
+            android:padding="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_margin="8dp"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <Button
+        android:id="@+id/btnReconnect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/reconnect"
+        android:layout_gravity="center"
+        android:backgroundTint="@color/color_primary"
+        android:textColor="@android:color/white"
+        android:layout_marginTop="16dp"/>
+
+</LinearLayout>
