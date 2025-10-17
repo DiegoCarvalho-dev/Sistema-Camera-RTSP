@@ -1,4 +1,4 @@
-package com.exemplo.sistemacontageminteligente
+package com.example.sistemacontageminteligente
 
 import java.util.regex.Pattern
 
