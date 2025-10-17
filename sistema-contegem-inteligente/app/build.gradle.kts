@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.diego.smartcounting"
+    namespace = "com.example.sistemacontageminteligente"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.diego.smartcounting"
+        applicationId = "com.example.sistemacontageminteligente"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
