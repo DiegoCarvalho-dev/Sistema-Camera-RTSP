@@ -1,4 +1,4 @@
-package com.exemplo.sistemacontageminteligente
+package com.example.sistemacontageminteligente
 
 import android.content.Context
 import android.util.Log
@@ -69,7 +69,7 @@ class CameraManager(private val context: Context) {
                         MediaPlayer.Event.Stopped -> {
                             statusListener?.onCameraStatusChanged(cameraId, "Desconectado")
                         }
-                        MediaPlayer.Event.Error -> {
+                        MediaPlayer.Event.EncounteredError -> {
                             statusListener?.onCameraStatusChanged(cameraId, "Erro de conexão")
                             statusListener?.onCameraError(cameraId, "Falha na conexão com a câmera")
                         }
@@ -97,8 +97,8 @@ class CameraManager(private val context: Context) {
 
     fun getCameraConnectionInfo(cameraId: Int): String {
         return when (cameraId) {
-            1 -> urlValidator.extractCameraInfo(camera1Url).toString()
-            2 -> urlValidator.extractCameraInfo(camera2Url).toString()
+            1 -> urlValidator.extractCameraInfo(CameraConfig.CAMERA_1_URL).toString()
+            2 -> urlValidator.extractCameraInfo(CameraConfig.CAMERA_2_URL).toString()
             else -> "Câmera não encontrada"
         }
     }
@@ -122,10 +122,5 @@ class CameraManager(private val context: Context) {
         mediaPlayer1 = null
         mediaPlayer2 = null
         libVLC = null
-    }
-
-    companion object {
-        private const val camera1Url = "rtsp://admin:1q2w3e%21QW%40E@192.168.1.108:554/cam/realmonitor?channel=1&subtype=1"
-        private const val camera2Url = "rtsp://admin:1q2w3e%21QW%40E@192.168.1.109:554/cam/realmonitor?channel=1&subtype=1"
     }
 }
