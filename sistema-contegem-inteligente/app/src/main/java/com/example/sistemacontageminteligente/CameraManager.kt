@@ -1,6 +1,7 @@
 package com.example.sistemacontageminteligente
 
 import android.content.Context
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -14,7 +15,6 @@ class CameraManager(private val context: Context) {
     private var libVLC: LibVLC? = null
     private var mediaPlayer1: MediaPlayer? = null
     private var mediaPlayer2: MediaPlayer? = null
-    private val urlValidator = RTSPUrlValidator()
     private val reconnectHandler = Handler(Looper.getMainLooper())
 
     private var isReconnectingCamera1 = false
@@ -33,7 +33,9 @@ class CameraManager(private val context: Context) {
 
     fun initializeVLC() {
         try {
-            libVLC = LibVLC(context, arrayListOf("--rtsp-tcp"))
+            // Adicionada a opção --no-stats para economizar CPU
+            val options = arrayListOf("--verbose=1", "--no-stats")
+            libVLC = LibVLC(context, options)
         } catch (e: Exception) {
             Log.e("CameraManager", "Erro ao inicializar VLC: ${e.message}")
             statusListener?.onCameraError(0, "Falha ao inicializar player de vídeo")
@@ -46,22 +48,26 @@ class CameraManager(private val context: Context) {
             return
         }
 
-        val validation = urlValidator.validateUrl(cameraUrl)
-        if (!validation.isValid) {
-            statusListener?.onCameraError(cameraId, "URL inválida: ${validation.message}")
-            return
-        }
-
-        Log.d("CameraManager", "Conectando câmera $cameraId")
-        val formattedUrl = urlValidator.formatUrlWithTimeout(cameraUrl, CameraConfig.NETWORK_TIMEOUT)
+        Log.d("CameraManager", "Conectando câmera $cameraId com a URL: $cameraUrl")
 
         try {
             val mediaPlayer = MediaPlayer(libVLC).apply {
                 attachViews(videoLayout, null, false, false)
                 setEventListener { event -> handlePlayerEvent(event, cameraId, cameraUrl, videoLayout) }
 
-                val media = Media(libVLC, formattedUrl)
-                media.setHWDecoderEnabled(true, false)
+                val media = Media(libVLC, Uri.parse(cameraUrl))
+
+                // Reativar a decodificação por hardware
+                media.setHWDecoderEnabled(true, true)
+
+                // --- Otimizações Avançadas para Fluidez ---
+                media.addOption("--no-audio") // Desativa o áudio para economizar recursos
+                media.addOption(":network-caching=2000") // Aumenta o buffer de rede
+                media.addOption(":live-caching=500") // Otimiza o cache para streams ao vivo
+                media.addOption("--avcodec-skip-frame=1") // Pula quadros para manter a fluidez
+                media.addOption("--avcodec-skip-idct=1") // Otimiza o algoritmo de decodificação
+                media.addOption(":sout-keep")
+
                 setMedia(media)
                 play()
             }
@@ -91,7 +97,7 @@ class CameraManager(private val context: Context) {
                 }
                 scheduleAutoReconnect(cameraId, cameraUrl, videoLayout)
             }
-            MediaPlayer.Event.Buffering -> statusListener?.onCameraStatusChanged(cameraId, "Buffering...")
+            MediaPlayer.Event.Buffering -> statusListener?.onCameraStatusChanged(cameraId, "Conectado")
         }
     }
 
